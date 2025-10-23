@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Packages\RelationManagers;
 
+use App\Models\Product;
 use Filament\Actions\AssociateAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -10,6 +11,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\DissociateAction;
 use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
@@ -24,13 +26,16 @@ class ItemsRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                TextInput::make('product_id')
+                Select::make('product_id')
+                    ->label('Product')
+                    ->options(Product::all()->pluck('name', 'id'))
                     ->required()
-                    ->numeric(),
+                    ->searchable(),
                 TextInput::make('quantity')
                     ->required()
                     ->numeric()
-                    ->default(1),
+                    ->default(1)
+                    ->minValue(1),
             ]);
     }
 
@@ -39,9 +44,10 @@ class ItemsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('name')
             ->columns([
-                TextColumn::make('product_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('product.name')
+                    ->label('Product')
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),
