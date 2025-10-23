@@ -9,6 +9,7 @@ use App\Filament\Resources\PackageItems\Schemas\PackageItemForm;
 use App\Filament\Resources\PackageItems\Tables\PackageItemsTable;
 use App\Models\PackageItem;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -20,6 +21,10 @@ class PackageItemResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static string|UnitEnum|null $navigationGroup = 'Catalog';
+
+    protected static ?int $navigationSort = 3;
+    
     public static function form(Schema $schema): Schema
     {
         return PackageItemForm::configure($schema);

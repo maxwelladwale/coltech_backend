@@ -11,6 +11,7 @@ use App\Filament\Resources\PartnerGarages\Schemas\PartnerGarageInfolist;
 use App\Filament\Resources\PartnerGarages\Tables\PartnerGaragesTable;
 use App\Models\PartnerGarage;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -21,6 +22,10 @@ class PartnerGarageResource extends Resource
     protected static ?string $model = PartnerGarage::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Partners';
+    
+    protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'name';
 
