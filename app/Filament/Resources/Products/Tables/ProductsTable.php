@@ -10,6 +10,8 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 
@@ -61,6 +63,28 @@ class ProductsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('category')
+                    ->options([
+                        'mdvr' => 'MDVR',
+                        'camera' => 'Camera',
+                    ]),
+                TernaryFilter::make('in_stock')
+                    ->label('Stock Status')
+                    ->placeholder('All products')
+                    ->trueLabel('In Stock')
+                    ->falseLabel('Out of Stock'),
+                TernaryFilter::make('includes_free_license')
+                    ->label('Free License')
+                    ->placeholder('All products')
+                    ->trueLabel('Includes License')
+                    ->falseLabel('No License'),
+                SelectFilter::make('license_type')
+                    ->options([
+                        'basic' => 'Basic',
+                        'standard' => 'Standard',
+                        'premium' => 'Premium',
+                    ])
+                    ->label('License Type'),
                 TrashedFilter::make(),
             ])
             ->recordActions([
