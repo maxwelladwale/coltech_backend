@@ -11,6 +11,7 @@ use App\Filament\Resources\Licenses\Schemas\LicenseInfolist;
 use App\Filament\Resources\Licenses\Tables\LicensesTable;
 use App\Models\License;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -22,6 +23,10 @@ class LicenseResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static string|UnitEnum|null $navigationGroup = 'Customers';
+
+    protected static ?int $navigationSort = 2;
+    
     public static function form(Schema $schema): Schema
     {
         return LicenseForm::configure($schema);
