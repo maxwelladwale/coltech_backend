@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Orders\RelationManagers;
 
+use App\Models\Product;
 use Filament\Actions\AssociateAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
@@ -10,7 +11,10 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\DissociateAction;
 use Filament\Actions\DissociateBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -24,25 +28,61 @@ class ItemsRelationManager extends RelationManager
     {
         return $schema
             ->components([
-                TextInput::make('product_id')
+                Select::make('product_id')
+                    ->label('Product')
+                    ->options(Product::all()->pluck('name', 'id'))
                     ->required()
-                    ->numeric(),
+                    ->searchable()
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, ?string $state) {
+                        if ($state) {
+                            $product = Product::find($state);
+                            if ($product) {
+                                $set('product_name', $product->name);
+                                $set('product_sku', $product->sku);
+                                $set('product_category', $product->category);
+                                $set('unit_price', $product->price);
+                            }
+                        }
+                    }),
                 TextInput::make('product_name')
-                    ->required(),
+                    ->required()
+                    ->disabled()
+                    ->dehydrated(),
                 TextInput::make('product_sku')
-                    ->required(),
+                    ->required()
+                    ->disabled()
+                    ->dehydrated(),
                 TextInput::make('product_category')
-                    ->required(),
+                    ->required()
+                    ->disabled()
+                    ->dehydrated(),
                 TextInput::make('quantity')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->default(1)
+                    ->minValue(1)
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, ?string $state, Get $get) {
+                        $quantity = (int) $state;
+                        $unitPrice = (float) $get('unit_price');
+                        $set('total_price', $quantity * $unitPrice);
+                    }),
                 TextInput::make('unit_price')
                     ->required()
-                    ->numeric(),
+                    ->numeric()
+                    ->prefix('KES')
+                    ->disabled()
+                    ->dehydrated(),
                 TextInput::make('total_price')
                     ->required()
-                    ->numeric(),
-                TextInput::make('customizations'),
+                    ->numeric()
+                    ->prefix('KES')
+                    ->disabled()
+                    ->dehydrated(),
+                TextInput::make('customizations')
+                    ->label('Customizations (JSON)')
+                    ->helperText('Optional product customizations'),
             ]);
     }
 
@@ -51,24 +91,31 @@ class ItemsRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('order_number')
             ->columns([
-                TextColumn::make('product_id')
-                    ->numeric()
-                    ->sortable(),
                 TextColumn::make('product_name')
-                    ->searchable(),
+                    ->label('Product')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('product_sku')
-                    ->searchable(),
+                    ->label('SKU')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('product_category')
-                    ->searchable(),
+                    ->label('Category')
+                    ->badge()
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('unit_price')
-                    ->numeric()
+                    ->label('Unit Price')
+                    ->money('KES')
                     ->sortable(),
                 TextColumn::make('total_price')
-                    ->numeric()
-                    ->sortable(),
+                    ->label('Total')
+                    ->money('KES')
+                    ->sortable()
+                    ->weight('bold'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

@@ -14,27 +14,35 @@ class OrderItemsTable
     {
         return $table
             ->columns([
-                TextColumn::make('order_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('product_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('order.order_number')
+                    ->label('Order')
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('product_name')
-                    ->searchable(),
+                    ->label('Product')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('product_sku')
-                    ->searchable(),
+                    ->label('SKU')
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('product_category')
-                    ->searchable(),
+                    ->label('Category')
+                    ->badge()
+                    ->searchable()
+                    ->toggleable(),
                 TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('unit_price')
-                    ->numeric()
+                    ->label('Unit Price')
+                    ->money('KES')
                     ->sortable(),
                 TextColumn::make('total_price')
-                    ->numeric()
-                    ->sortable(),
+                    ->label('Total')
+                    ->money('KES')
+                    ->sortable()
+                    ->weight('bold'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
