@@ -14,12 +14,14 @@ class PackageItemsTable
     {
         return $table
             ->columns([
-                TextColumn::make('package_id')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('product_id')
-                    ->numeric()
-                    ->sortable(),
+                TextColumn::make('package.name')
+                    ->label('Package')
+                    ->sortable()
+                    ->searchable(),
+                TextColumn::make('product.name')
+                    ->label('Product')
+                    ->sortable()
+                    ->searchable(),
                 TextColumn::make('quantity')
                     ->numeric()
                     ->sortable(),
