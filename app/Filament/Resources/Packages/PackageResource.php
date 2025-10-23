@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Packages;
 use App\Filament\Resources\Packages\Pages\CreatePackage;
 use App\Filament\Resources\Packages\Pages\EditPackage;
 use App\Filament\Resources\Packages\Pages\ListPackages;
+use App\Filament\Resources\Packages\RelationManagers\ItemsRelationManager;
 use App\Filament\Resources\Packages\Schemas\PackageForm;
 use App\Filament\Resources\Packages\Tables\PackagesTable;
 use App\Models\Package;
@@ -37,7 +38,7 @@ class PackageResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ItemsRelationManager::class,
         ];
     }
 
