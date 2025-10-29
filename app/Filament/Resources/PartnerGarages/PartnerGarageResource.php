@@ -6,6 +6,7 @@ use App\Filament\Resources\PartnerGarages\Pages\CreatePartnerGarage;
 use App\Filament\Resources\PartnerGarages\Pages\EditPartnerGarage;
 use App\Filament\Resources\PartnerGarages\Pages\ListPartnerGarages;
 use App\Filament\Resources\PartnerGarages\Pages\ViewPartnerGarage;
+use App\Filament\Resources\PartnerGarages\RelationManagers\OrdersRelationManager;
 use App\Filament\Resources\PartnerGarages\Schemas\PartnerGarageForm;
 use App\Filament\Resources\PartnerGarages\Schemas\PartnerGarageInfolist;
 use App\Filament\Resources\PartnerGarages\Tables\PartnerGaragesTable;
@@ -47,7 +48,7 @@ class PartnerGarageResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            OrdersRelationManager::class,
         ];
     }
 
