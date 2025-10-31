@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Orders\Tables;
 
 use App\Models\Order;
+use App\Notifications\OrderStatusChangedNotification;
+use App\Notifications\PaymentReceivedNotification;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -157,10 +159,19 @@ class OrdersTable
                     ->action(function (Order $record) {
                         $record->update(['payment_status' => 'paid']);
 
+                        // Send email to customer
+                        $message = "Order {$record->order_number} has been marked as paid.";
+                        if ($record->user) {
+                            $record->user->notify(new PaymentReceivedNotification($record));
+                            $message .= " Customer notified via email {$record->user->email}.";
+                        }else{
+                            $message .= " No customer associated with this order.";
+                        }
+
                         Notification::make()
                             ->success()
                             ->title('Order marked as paid')
-                            ->body("Order {$record->order_number} has been marked as paid.")
+                            ->body($message)
                             ->send();
                     }),
                 Action::make('updateStatus')
@@ -180,12 +191,22 @@ class OrdersTable
                             ->required(),
                     ])
                     ->action(function (Order $record, array $data) {
+                        $oldStatus = $record->status;
                         $record->update(['status' => $data['status']]);
+
+                        // Send email to customer
+                        $message = "Order {$record->order_number} status changed from {$oldStatus} to {$data['status']}.";
+                        if ($record->user) {
+                            $record->user->notify(new OrderStatusChangedNotification($record, $oldStatus, $data['status']));
+                            $message .= " Customer notified via email {$record->user->email}.";
+                        }else{
+                            $message .= " No customer associated with this order.";
+                        }
 
                         Notification::make()
                             ->success()
                             ->title('Status updated')
-                            ->body("Order {$record->order_number} status changed to {$data['status']}.")
+                            ->body($message)
                             ->send();
                     }),
             ])

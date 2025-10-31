@@ -6,10 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Notifications\OrderAssignedToGarageNotification;
+use App\Notifications\OrderPlacedNotification;
+use App\Notifications\OrderStatusChangedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
@@ -46,6 +50,17 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
+            // Debug authentication - try both guards
+            \Log::info('Order creation attempt', [
+                'has_auth_header' => $request->hasHeader('Authorization'),
+                'auth_header' => $request->header('Authorization'),
+                'web_guard_check' => auth('web')->check(),
+                'sanctum_guard_check' => auth('sanctum')->check(),
+                'default_guard' => auth()->getDefaultDriver(),
+                'web_user_id' => auth('web')->id(),
+                'sanctum_user_id' => auth('sanctum')->id(),
+            ]);
+
             // Calculate totals
             $subtotal = 0;
             $cartItems = [];
@@ -75,11 +90,21 @@ class OrderController extends Controller
             }
 
             $total = $subtotal + $installationCost;
+            // // log logged in user id
+            // var_dump(Auth::user());
+            // var_dump(Auth::id());
 
-            // Create order
+            // Debug: Log authentication status
+            \Log::info('Creating order', [
+                'authenticated' => auth()->check(),
+                'user_id' => auth()->id(),
+                'email' => $request->shippingAddress['email']
+            ]);
+
+            // Create order (use sanctum guard explicitly for API)
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
-                'user_id' => auth()->id() ?? null,
+                'user_id' => auth('sanctum')->id() ?? null,
                 'guest_email' => $request->shippingAddress['email'],
                 'subtotal' => $subtotal,
                 'tax' => 0,
@@ -122,10 +147,33 @@ class OrderController extends Controller
             DB::commit();
 
             // Load order with items
-            $order->load('items', 'garage');
+            $order->load('items', 'garage', 'user');
 
-            // TODO: Send confirmation email/SMS
-            // TODO: Notify sales team
+            // Send order confirmation email to customer
+            if ($order->user) {
+                $order->user->notify(new OrderPlacedNotification($order));
+            }
+
+            // Send notification to garage if installation is required
+            if ($order->garage_id && $order->garage) {
+                // Create a simple notifiable object for the garage
+                $garageNotifiable = new class($order->garage->email, $order->garage->name) {
+                    public $email;
+                    public $name;
+
+                    public function __construct($email, $name) {
+                        $this->email = $email;
+                        $this->name = $name;
+                    }
+
+                    public function routeNotificationForMail() {
+                        return $this->email;
+                    }
+                };
+
+                \Illuminate\Support\Facades\Notification::route('mail', $order->garage->email)
+                    ->notify(new OrderAssignedToGarageNotification($order));
+            }
 
             return response()->json($order, 201);
 
@@ -240,7 +288,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $order = Order::find($id);
+        $order = Order::with('user')->find($id);
 
         if (! $order) {
             return response()->json([
@@ -248,9 +296,13 @@ class OrderController extends Controller
             ], 404);
         }
 
+        $oldStatus = $order->status;
         $order->update(['status' => $request->status]);
 
-        // TODO: Send notification to customer
+        // Send notification to customer
+        if ($order->user) {
+            $order->user->notify(new OrderStatusChangedNotification($order, $oldStatus, $request->status));
+        }
 
         return response()->json($order);
     }

@@ -5,6 +5,7 @@
 // ============================================================================
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\PackageController;
 use App\Http\Controllers\API\OrderController;
@@ -35,6 +36,20 @@ Route::get('/health', function () {
         'version' => '1.0.0',
         'timestamp' => now()->toIso8601String()
     ]);
+});
+
+// ----------------------------------------------------------------------------
+// AUTHENTICATION
+// ----------------------------------------------------------------------------
+Route::prefix('auth')->group(function () {
+    Route::post('/signup', [AuthController::class, 'signup']);
+    Route::post('/login', [AuthController::class, 'login']);
+
+    // Protected routes
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/profile', [AuthController::class, 'profile']);
+    });
 });
 
 // ----------------------------------------------------------------------------
