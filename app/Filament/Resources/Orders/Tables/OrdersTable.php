@@ -162,10 +162,16 @@ class OrdersTable
                         // Send email to customer
                         $message = "Order {$record->order_number} has been marked as paid.";
                         if ($record->user) {
+                            // Registered user
                             $record->user->notify(new PaymentReceivedNotification($record));
                             $message .= " Customer notified via email {$record->user->email}.";
-                        }else{
-                            $message .= " No customer associated with this order.";
+                        } elseif ($record->shipping_email) {
+                            // Guest user
+                            \Illuminate\Support\Facades\Notification::route('mail', $record->shipping_email)
+                                ->notify(new PaymentReceivedNotification($record));
+                            $message .= " Guest customer notified via email {$record->shipping_email}.";
+                        } else {
+                            $message .= " No email address found for customer.";
                         }
 
                         Notification::make()
@@ -194,13 +200,22 @@ class OrdersTable
                         $oldStatus = $record->status;
                         $record->update(['status' => $data['status']]);
 
+                        // Reload relationships
+                        $record->load('garage');
+
                         // Send email to customer
                         $message = "Order {$record->order_number} status changed from {$oldStatus} to {$data['status']}.";
                         if ($record->user) {
+                            // Registered user
                             $record->user->notify(new OrderStatusChangedNotification($record, $oldStatus, $data['status']));
                             $message .= " Customer notified via email {$record->user->email}.";
-                        }else{
-                            $message .= " No customer associated with this order.";
+                        } elseif ($record->shipping_email) {
+                            // Guest user
+                            \Illuminate\Support\Facades\Notification::route('mail', $record->shipping_email)
+                                ->notify(new OrderStatusChangedNotification($record, $oldStatus, $data['status']));
+                            $message .= " Guest customer notified via email {$record->shipping_email}.";
+                        } else {
+                            $message .= " No email address found for customer.";
                         }
 
                         Notification::make()
