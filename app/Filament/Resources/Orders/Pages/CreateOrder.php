@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Orders\Pages;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Models\User;
 use App\Notifications\NewOrderNotification;
+use App\Notifications\OrderAssignedToGarageNotification;
 use App\Notifications\OrderPlacedNotification;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -49,6 +50,17 @@ class CreateOrder extends CreateRecord
         ]);
         foreach ($adminUsers as $admin) {
             $admin->notify(new NewOrderNotification($order));
+        }
+
+        // Send notification to garage if installation is required
+        if ($order->garage_id && $order->garage) {
+            \Log::info('Queueing garage notification (Filament)', [
+                'order_number' => $order->order_number,
+                'garage_name' => $order->garage->name,
+                'garage_email' => $order->garage->email,
+            ]);
+            \Illuminate\Support\Facades\Notification::route('mail', $order->garage->email)
+                ->notify(new OrderAssignedToGarageNotification($order));
         }
     }
 }
