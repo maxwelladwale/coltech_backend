@@ -35,6 +35,17 @@ class OrderInfolist
                     ->placeholder('-'),
                 TextEntry::make('payment_transaction_id')
                     ->placeholder('-'),
+                TextEntry::make('tracking_number')
+                    ->placeholder('-')
+                    ->visible(fn (Order $record): bool => in_array($record->status, ['shipped', 'delivered'])),
+                TextEntry::make('carrier')
+                    ->badge()
+                    ->placeholder('-')
+                    ->visible(fn (Order $record): bool => in_array($record->status, ['shipped', 'delivered'])),
+                TextEntry::make('tracking_url')
+                    ->url(fn (Order $record): ?string => $record->tracking_url)
+                    ->placeholder('-')
+                    ->visible(fn (Order $record): bool => in_array($record->status, ['shipped', 'delivered'])),
                 TextEntry::make('shipping_name'),
                 TextEntry::make('shipping_phone'),
                 TextEntry::make('shipping_email'),

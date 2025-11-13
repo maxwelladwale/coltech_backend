@@ -69,6 +69,26 @@ class OrderForm
                 TextInput::make('payment_transaction_id')
                     ->label('Transaction ID'),
 
+                TextInput::make('tracking_number')
+                    ->label('Tracking Number')
+                    ->visible(fn (Get $get) => in_array($get('status'), ['shipped', 'delivered'])),
+                Select::make('carrier')
+                    ->label('Shipping Carrier')
+                    ->options([
+                        'dhl' => 'DHL',
+                        'fedex' => 'FedEx',
+                        'ups' => 'UPS',
+                        'posta' => 'Posta Kenya',
+                        'skynet' => 'Skynet',
+                        'other' => 'Other',
+                    ])
+                    ->searchable()
+                    ->visible(fn (Get $get) => in_array($get('status'), ['shipped', 'delivered'])),
+                TextInput::make('tracking_url')
+                    ->label('Tracking URL')
+                    ->url()
+                    ->visible(fn (Get $get) => in_array($get('status'), ['shipped', 'delivered'])),
+
                 TextInput::make('shipping_name')
                     ->label('Ship To: Full Name')
                     ->required(),

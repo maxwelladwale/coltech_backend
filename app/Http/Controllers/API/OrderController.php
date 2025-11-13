@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\User;
+use App\Notifications\NewOrderNotification;
 use App\Notifications\OrderAssignedToGarageNotification;
 use App\Notifications\OrderPlacedNotification;
 use App\Notifications\OrderStatusChangedNotification;
@@ -50,17 +52,6 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
-            // Debug authentication - try both guards
-            \Log::info('Order creation attempt', [
-                'has_auth_header' => $request->hasHeader('Authorization'),
-                'auth_header' => $request->header('Authorization'),
-                'web_guard_check' => auth('web')->check(),
-                'sanctum_guard_check' => auth('sanctum')->check(),
-                'default_guard' => auth()->getDefaultDriver(),
-                'web_user_id' => auth('web')->id(),
-                'sanctum_user_id' => auth('sanctum')->id(),
-            ]);
-
             // Calculate totals
             $subtotal = 0;
             $cartItems = [];
@@ -90,16 +81,6 @@ class OrderController extends Controller
             }
 
             $total = $subtotal + $installationCost;
-            // // log logged in user id
-            // var_dump(Auth::user());
-            // var_dump(Auth::id());
-
-            // Debug: Log authentication status
-            \Log::info('Creating order', [
-                'authenticated' => auth()->check(),
-                'user_id' => auth()->id(),
-                'email' => $request->shippingAddress['email']
-            ]);
 
             // Create order (use sanctum guard explicitly for API)
             $order = Order::create([
@@ -151,7 +132,23 @@ class OrderController extends Controller
 
             // Send order confirmation email to customer
             if ($order->user) {
+                \Log::info('Queueing order confirmation email', [
+                    'order_number' => $order->order_number,
+                    'customer_id' => $order->user->id,
+                    'customer_email' => $order->user->email,
+                ]);
                 $order->user->notify(new OrderPlacedNotification($order));
+            }
+
+            // Send notification to admin users
+            $adminUsers = User::where('role', 'admin')->get();
+            \Log::info('Queueing admin notifications', [
+                'order_number' => $order->order_number,
+                'admin_count' => $adminUsers->count(),
+                'admin_emails' => $adminUsers->pluck('email')->toArray(),
+            ]);
+            foreach ($adminUsers as $admin) {
+                $admin->notify(new NewOrderNotification($order));
             }
 
             // Send notification to garage if installation is required
