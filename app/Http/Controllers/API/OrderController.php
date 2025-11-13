@@ -132,12 +132,21 @@ class OrderController extends Controller
 
             // Send order confirmation email to customer
             if ($order->user) {
-                \Log::info('Queueing order confirmation email', [
+                // Registered user - send via user model
+                \Log::info('Queueing order confirmation email (registered user)', [
                     'order_number' => $order->order_number,
                     'customer_id' => $order->user->id,
                     'customer_email' => $order->user->email,
                 ]);
                 $order->user->notify(new OrderPlacedNotification($order));
+            } else {
+                // Guest user - send via email notification
+                \Log::info('Queueing order confirmation email (guest)', [
+                    'order_number' => $order->order_number,
+                    'guest_email' => $order->shipping_email,
+                ]);
+                \Illuminate\Support\Facades\Notification::route('mail', $order->shipping_email)
+                    ->notify(new OrderPlacedNotification($order));
             }
 
             // Send notification to admin users
