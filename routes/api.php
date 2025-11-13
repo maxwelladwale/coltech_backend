@@ -45,10 +45,16 @@ Route::prefix('auth')->group(function () {
     Route::post('/signup', [AuthController::class, 'signup']);
     Route::post('/login', [AuthController::class, 'login']);
 
+    // Email verification (requires signed URL)
+    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verify'])
+        ->name('verification.verify');
+
     // Protected routes
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/profile', [AuthController::class, 'profile']);
+        Route::post('/email/resend', [AuthController::class, 'resendVerification'])
+            ->name('verification.resend');
     });
 });
 
