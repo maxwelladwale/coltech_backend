@@ -37,6 +37,13 @@ class OrderPlacedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
+        \Log::info('Sending order confirmation to customer', [
+            'order_number' => $this->order->order_number,
+            'customer_email' => $notifiable->email ?? $this->order->shipping_email,
+            'customer_name' => $this->order->getCustomerName(),
+            'order_total' => $this->order->total,
+        ]);
+
         return (new MailMessage)
             ->subject('Order Confirmation - ' . $this->order->order_number)
             ->greeting('Hello ' . $this->order->getCustomerName() . '!')
