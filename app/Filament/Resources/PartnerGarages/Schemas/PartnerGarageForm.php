@@ -29,6 +29,9 @@ class PartnerGarageForm
                 TextInput::make('rating')
                     ->required()
                     ->numeric()
+                    ->maxValue(10)
+                    ->minValue(0)
+                    ->maxLength(2)
                     ->default(0.0),
                 Toggle::make('is_active')
                     ->required(),
