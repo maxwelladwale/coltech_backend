@@ -18,8 +18,10 @@ class OrderForm
         return $schema
             ->components([
                 TextInput::make('order_number')
-                    ->required()
-                    ->unique(ignoreRecord: true),
+                    ->label('Order Number (auto-generated)')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->placeholder('Will be generated automatically'),
                 Select::make('user_id')
                     ->label('Customer')
                     ->options(User::all()->pluck('full_name', 'id'))

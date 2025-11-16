@@ -132,6 +132,14 @@ class Order extends Model
     // Static method to generate unique order number
     public static function generateOrderNumber(): string
     {
-        return 'ORD-' . strtoupper(substr(uniqid(), -8));
+        do {
+            // Generate order number: ORD-YYYYMMDD-XXXXX (e.g., ORD-20251116-A1B2C)
+            $orderNumber = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
+
+            // Check if it already exists in database
+            $exists = static::where('order_number', $orderNumber)->exists();
+        } while ($exists);
+
+        return $orderNumber;
     }
 }
