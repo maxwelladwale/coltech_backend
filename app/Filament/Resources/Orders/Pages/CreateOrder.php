@@ -13,6 +13,12 @@ class CreateOrder extends CreateRecord
 {
     protected static string $resource = OrderResource::class;
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['order_number'] = \App\Models\Order::generateOrderNumber();
+        return $data;
+    }
+
     protected function afterCreate(): void
     {
         $order = $this->record;
