@@ -86,9 +86,11 @@ Route::prefix('orders')->group(function () {
     Route::post('/', [OrderController::class, 'store']);
     Route::post('/track', [OrderController::class, 'track']); // Guest order tracking
     Route::get('/{id}', [OrderController::class, 'show']);
-    
+    Route::get('/{id}/invoice', [OrderController::class, 'downloadInvoice']); // Download invoice
+
     // Admin only (add middleware later)
     Route::patch('/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::post('/{id}/invoice/regenerate', [OrderController::class, 'regenerateInvoice']);
 });
 
 // ----------------------------------------------------------------------------
@@ -201,7 +203,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 | POST   /api/orders                           - Create order
 | POST   /api/orders/track                     - Track order (guest)
 | GET    /api/orders/{id}                      - Get order by ID
+| GET    /api/orders/{id}/invoice              - Download invoice PDF
 | PATCH  /api/orders/{id}/status               - Update order status
+| POST   /api/orders/{id}/invoice/regenerate   - Regenerate invoice (admin)
 | 
 | GET    /api/garages                          - Get garages
 | GET    /api/garages?county=Nairobi           - Filter by county

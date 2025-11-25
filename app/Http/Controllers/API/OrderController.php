@@ -130,6 +130,16 @@ class OrderController extends Controller
             // Load order with items
             $order->load('items', 'garage', 'user');
 
+            // Generate invoice for the order
+            try {
+                $order->generateInvoice();
+            } catch (\Exception $e) {
+                \Log::error('Failed to generate invoice', [
+                    'order_number' => $order->order_number,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             // Send order confirmation email to customer
             if ($order->user) {
                 // Registered user - send via user model
@@ -311,5 +321,70 @@ class OrderController extends Controller
         }
 
         return response()->json($order);
+    }
+
+    /**
+     * Download invoice for an order
+     * NEW: Download invoice PDF
+     *
+     * GET /api/orders/{id}/invoice
+     */
+    public function downloadInvoice(string $id)
+    {
+        $order = Order::find($id);
+
+        if (! $order) {
+            return response()->json([
+                'message' => 'Order not found',
+            ], 404);
+        }
+
+        if (! $order->hasInvoice()) {
+            return response()->json([
+                'message' => 'Invoice not available for this order',
+            ], 404);
+        }
+
+        try {
+            $invoiceService = app(\App\Services\InvoiceService::class);
+            return $invoiceService->downloadInvoice($order);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to download invoice',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Regenerate invoice for an order
+     * NEW: Force regenerate invoice PDF
+     *
+     * POST /api/orders/{id}/invoice/regenerate
+     */
+    public function regenerateInvoice(string $id): JsonResponse
+    {
+        $order = Order::with('items')->find($id);
+
+        if (! $order) {
+            return response()->json([
+                'message' => 'Order not found',
+            ], 404);
+        }
+
+        try {
+            $order->generateInvoice();
+            $order->refresh();
+
+            return response()->json([
+                'message' => 'Invoice regenerated successfully',
+                'invoice_url' => $order->invoice_url,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to regenerate invoice',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

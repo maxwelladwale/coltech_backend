@@ -73,9 +73,15 @@ class OrderInfolist
                 TextEntry::make('vehicle_model')
                     ->placeholder('-'),
                 TextEntry::make('invoice_url')
-                    ->placeholder('-'),
+                    ->label('Invoice')
+                    ->url(fn (Order $record): ?string => $record->invoice_url)
+                    ->openUrlInNewTab()
+                    ->placeholder('Not generated yet')
+                    ->visible(fn (Order $record): bool => !empty($record->invoice_url)),
                 TextEntry::make('invoice_qr_code')
-                    ->placeholder('-'),
+                    ->label('Invoice QR Code')
+                    ->placeholder('-')
+                    ->visible(fn (Order $record): bool => !empty($record->invoice_qr_code)),
                 TextEntry::make('created_at')
                     ->dateTime()
                     ->placeholder('-'),

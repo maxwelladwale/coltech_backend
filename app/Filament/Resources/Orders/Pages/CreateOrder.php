@@ -29,6 +29,16 @@ class CreateOrder extends CreateRecord
             'has_customer' => (bool) $order->user,
         ]);
 
+        // Generate invoice for the order
+        try {
+            $order->generateInvoice();
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate invoice (Filament)', [
+                'order_number' => $order->order_number,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         // Send order confirmation email to customer
         if ($order->user) {
             // Registered user

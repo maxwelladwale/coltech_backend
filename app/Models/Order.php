@@ -142,4 +142,36 @@ class Order extends Model
 
         return $orderNumber;
     }
+
+    /**
+     * Generate invoice PDF for this order
+     *
+     * @return void
+     */
+    public function generateInvoice(): void
+    {
+        $invoiceService = app(\App\Services\InvoiceService::class);
+        $invoiceData = $invoiceService->generateInvoice($this);
+
+        // Update order with invoice details
+        $this->update([
+            'invoice_url' => $invoiceData['url'],
+            'invoice_qr_code' => $invoiceData['qr_code'],
+        ]);
+
+        \Log::info('Invoice generated for order', [
+            'order_number' => $this->order_number,
+            'invoice_url' => $invoiceData['url'],
+        ]);
+    }
+
+    /**
+     * Check if order has an invoice
+     *
+     * @return bool
+     */
+    public function hasInvoice(): bool
+    {
+        return !empty($this->invoice_url);
+    }
 }
