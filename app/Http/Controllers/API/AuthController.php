@@ -161,24 +161,34 @@ class AuthController extends Controller
      * Verify user email
      *
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
     public function verify(Request $request)
     {
         $user = User::findOrFail($request->route('id'));
 
+        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+
         // Check if the hash matches
         if (!hash_equals((string) $request->route('hash'), sha1($user->getEmailForVerification()))) {
-            return response()->json([
-                'message' => 'Invalid verification link.'
-            ], 403);
+            \Log::warning('Invalid email verification attempt', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+            ]);
+
+            // Redirect to frontend with error
+            return redirect()->to($frontendUrl . '/auth/verification/failed?reason=invalid');
         }
 
         // Check if email is already verified
         if ($user->hasVerifiedEmail()) {
-            return response()->json([
-                'message' => 'Email already verified.'
-            ], 200);
+            \Log::info('Email verification attempted for already verified user', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+            ]);
+
+            // Redirect to frontend with info message
+            return redirect()->to($frontendUrl . '/auth/verification/success?already_verified=true');
         }
 
         // Mark email as verified
@@ -191,9 +201,8 @@ class AuthController extends Controller
             'email' => $user->email,
         ]);
 
-        return response()->json([
-            'message' => 'Email verified successfully.'
-        ], 200);
+        // Redirect to frontend with success message
+        return redirect()->to($frontendUrl . '/auth/verification/success');
     }
 
     /**
