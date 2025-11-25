@@ -22,3 +22,12 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Vendor published assets (auto-generated)
+/lang/vendor/
+/public/vendor/
+/resources/views/vendor/
+
+# Compiled frontend assets
+/public/css/
+/public/js/
