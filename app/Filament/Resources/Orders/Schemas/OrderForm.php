@@ -65,11 +65,15 @@ class OrderForm
                 Select::make('payment_status')
                     ->options(['pending' => 'Pending', 'paid' => 'Paid', 'failed' => 'Failed'])
                     ->default('pending')
-                    ->required(),
+                    ->required()
+                    ->live(),
                 Select::make('payment_method')
-                    ->options(['mpesa' => 'M-Pesa', 'card' => 'Card', 'bank' => 'Bank']),
+                    ->options(['mpesa' => 'M-Pesa', 'card' => 'Card', 'bank' => 'Bank'])
+                    ->live(),
                 TextInput::make('payment_transaction_id')
-                    ->label('Transaction ID'),
+                    ->label('Transaction ID')
+                    ->visible(fn (Get $get) => in_array($get('payment_status'), ['paid', 'failed']))
+                    ->required(fn (Get $get) => $get('payment_status') === 'paid'),
 
                 TextInput::make('tracking_number')
                     ->label('Tracking Number')
@@ -141,11 +145,19 @@ class OrderForm
                     ->label('Vehicle Model')
                     ->visible(fn (Get $get) => $get('installation_method') === 'technician'),
 
+                // Invoice fields are auto-generated and should not be manually editable
                 TextInput::make('invoice_url')
-                    ->label('Invoice URL')
-                    ->url(),
+                    ->label('Invoice URL (auto-generated)')
+                    ->url()
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->visible(fn ($record) => $record !== null && !empty($record->invoice_url))
+                    ->helperText('Invoice will be generated automatically after order creation'),
                 TextInput::make('invoice_qr_code')
-                    ->label('QR Code'),
+                    ->label('Invoice QR Code (auto-generated)')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->visible(fn ($record) => $record !== null && !empty($record->invoice_qr_code)),
             ]);
     }
 }
