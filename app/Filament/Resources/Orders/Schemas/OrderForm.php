@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\Orders\Schemas;
 
 use App\Models\PartnerGarage;
+use App\Models\Product;
 use App\Models\User;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class OrderForm
@@ -31,6 +34,74 @@ class OrderForm
                     ->label('Guest Email')
                     ->email()
                     ->visible(fn (Get $get) => !$get('user_id')),
+
+                Repeater::make('items')
+                    ->relationship()
+                    ->schema([
+                        Select::make('product_id')
+                            ->label('Product')
+                            ->options(Product::where('in_stock', true)->pluck('name', 'id'))
+                            ->searchable()
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                                if ($state) {
+                                    $product = Product::find($state);
+                                    if ($product) {
+                                        $set('product_name', $product->name);
+                                        $set('product_sku', $product->sku);
+                                        $set('product_category', $product->category);
+                                        $set('unit_price', $product->price);
+                                        $set('total_price', $product->price);
+                                    }
+                                }
+                            }),
+                        TextInput::make('quantity')
+                            ->numeric()
+                            ->default(1)
+                            ->minValue(1)
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $state) {
+                                $unitPrice = floatval($get('unit_price') ?? 0);
+                                $quantity = intval($state ?? 1);
+                                $set('total_price', $unitPrice * $quantity);
+                            }),
+                        TextInput::make('unit_price')
+                            ->label('Unit Price')
+                            ->numeric()
+                            ->prefix('KES')
+                            ->disabled()
+                            ->dehydrated(),
+                        TextInput::make('total_price')
+                            ->label('Total Price')
+                            ->numeric()
+                            ->prefix('KES')
+                            ->disabled()
+                            ->dehydrated(),
+                        TextInput::make('product_name')
+                            ->label('Product Name (Snapshot)')
+                            ->disabled()
+                            ->dehydrated()
+                            ->visible(fn ($record) => $record !== null),
+                        TextInput::make('product_sku')
+                            ->label('SKU (Snapshot)')
+                            ->disabled()
+                            ->dehydrated()
+                            ->visible(fn ($record) => $record !== null),
+                        TextInput::make('product_category')
+                            ->label('Category (Snapshot)')
+                            ->disabled()
+                            ->dehydrated()
+                            ->visible(fn ($record) => $record !== null),
+                    ])
+                    ->columns(2)
+                    ->defaultItems(1)
+                    ->addActionLabel('Add Product')
+                    ->reorderableWithButtons()
+                    ->collapsible()
+                    ->itemLabel(fn (array $state): ?string => $state['product_name'] ?? 'New Item')
+                    ->columnSpanFull(),
 
                 TextInput::make('subtotal')
                     ->required()
