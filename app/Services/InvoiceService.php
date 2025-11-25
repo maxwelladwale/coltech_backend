@@ -65,13 +65,19 @@ class InvoiceService
             ->currencyDecimalPoint('.')
             ->filename($order->order_number . '-invoice')
             ->addItems($items)
-            ->notes('Thank you for your business!')
-            ->logo(public_path('images/logo.png'))
-            ->save('public/invoices');
+            ->notes('Thank you for your business!');
+
+        // Add logo if it exists
+        $logoPath = public_path('images/logo.png');
+        if (file_exists($logoPath)) {
+            $invoice->logo($logoPath);
+        }
+
+        $invoice->save('public');
 
         // Get the saved file path
         $filename = $order->order_number . '-invoice.pdf';
-        $path = 'invoices/' . $filename;
+        $path = $filename;
 
         // Generate public URL
         $url = Storage::url($path);
