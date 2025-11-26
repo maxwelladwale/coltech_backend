@@ -37,11 +37,16 @@ class NewOrderNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
+        // Reload order to ensure we have the latest invoice_url
+        $this->order->refresh();
+
         \Log::info('Sending admin notification for new order', [
             'order_number' => $this->order->order_number,
             'admin_email' => $notifiable->email ?? 'unknown',
             'admin_name' => $notifiable->full_name ?? 'unknown',
             'order_total' => $this->order->total,
+            'has_invoice' => $this->order->hasInvoice(),
+            'invoice_url' => $this->order->invoice_url,
         ]);
 
         $itemsCount = $this->order->items->count();
@@ -59,7 +64,7 @@ class NewOrderNotification extends Notification implements ShouldQueue
             $installationInfo = "\n**Installation Method:** Self Installation";
         }
 
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject('New Order Received - ' . $this->order->order_number)
             ->greeting('New Order Alert!')
             ->line('A new order has been placed on your store.')
@@ -73,9 +78,17 @@ class NewOrderNotification extends Notification implements ShouldQueue
             ->line($itemsList)
             ->line($installationInfo)
             ->line("\n**Shipping Address:**")
-            ->line($this->order->shipping_address . ', ' . $this->order->shipping_city . ', ' . $this->order->shipping_county)
-            ->action('Manage Order in Admin', url('/admin/orders/' . $this->order->id))
+            ->line($this->order->shipping_address . ', ' . $this->order->shipping_city . ', ' . $this->order->shipping_county);
+
+        // Add invoice download link if available
+        if ($this->order->hasInvoice()) {
+            $message->action('Download Invoice', url('/api/orders/' . $this->order->id . '/invoice'));
+        }
+
+        $message->action('Manage Order in Admins', url('/admin/orders/' . $this->order->id))
             ->line('Please process this order as soon as possible.');
+
+        return $message;
     }
 
     /**
