@@ -133,8 +133,13 @@ class OrderController extends Controller
             // Generate invoice for the order
             try {
                 $order->generateInvoice();
+                $order->refresh(); // Refresh to get the updated invoice_url
+                \Log::info('Invoice generated successfully (API)', [
+                    'order_number' => $order->order_number,
+                    'invoice_url' => $order->invoice_url,
+                ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to generate invoice', [
+                \Log::error('Failed to generate invoice (API)', [
                     'order_number' => $order->order_number,
                     'error' => $e->getMessage(),
                 ]);
@@ -147,6 +152,7 @@ class OrderController extends Controller
                     'order_number' => $order->order_number,
                     'customer_id' => $order->user->id,
                     'customer_email' => $order->user->email,
+                    'invoice_url' => $order->invoice_url,
                 ]);
                 $order->user->notify(new OrderPlacedNotification($order));
             } else {
@@ -154,6 +160,7 @@ class OrderController extends Controller
                 \Log::info('Queueing order confirmation email (guest)', [
                     'order_number' => $order->order_number,
                     'guest_email' => $order->shipping_email,
+                    'invoice_url' => $order->invoice_url,
                 ]);
                 \Illuminate\Support\Facades\Notification::route('mail', $order->shipping_email)
                     ->notify(new OrderPlacedNotification($order));
@@ -165,6 +172,7 @@ class OrderController extends Controller
                 'order_number' => $order->order_number,
                 'admin_count' => $adminUsers->count(),
                 'admin_emails' => $adminUsers->pluck('email')->toArray(),
+                'invoice_url' => $order->invoice_url,
             ]);
             foreach ($adminUsers as $admin) {
                 $admin->notify(new NewOrderNotification($order));

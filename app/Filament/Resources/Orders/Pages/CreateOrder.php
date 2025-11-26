@@ -32,6 +32,11 @@ class CreateOrder extends CreateRecord
         // Generate invoice for the order
         try {
             $order->generateInvoice();
+            $order->refresh(); // Refresh to get the updated invoice_url
+            \Log::info('Invoice generated successfully (Filament)', [
+                'order_number' => $order->order_number,
+                'invoice_url' => $order->invoice_url,
+            ]);
         } catch (\Exception $e) {
             \Log::error('Failed to generate invoice (Filament)', [
                 'order_number' => $order->order_number,

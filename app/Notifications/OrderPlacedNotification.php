@@ -37,24 +37,37 @@ class OrderPlacedNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
+        // Reload order to ensure we have the latest invoice_url
+        $this->order->refresh();
+
         \Log::info('Sending order confirmation to customer', [
             'order_number' => $this->order->order_number,
             'customer_email' => $notifiable->email ?? $this->order->shipping_email,
             'customer_name' => $this->order->getCustomerName(),
             'order_total' => $this->order->total,
+            'has_invoice' => $this->order->hasInvoice(),
+            'invoice_url' => $this->order->invoice_url,
         ]);
 
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject('Order Confirmation - ' . $this->order->order_number)
             ->greeting('Hello ' . $this->order->getCustomerName() . '!')
             ->line('Thank you for your order. We have received your order and it is being processed.')
             ->line('**Order Number:** ' . $this->order->order_number)
             ->line('**Order Total:** KES ' . number_format($this->order->total, 2))
             ->line('**Status:** ' . ucfirst($this->order->status))
-            ->line('**Payment Status:** ' . ucfirst($this->order->payment_status))
-            ->action('View Order', url('/orders/' . $this->order->id))
+            ->line('**Payment Status:** ' . ucfirst($this->order->payment_status));
+
+        // Add invoice download link if available
+        if ($this->order->hasInvoice()) {
+            $message->action('Download Invoice', url('/api/orders/' . $this->order->id . '/invoice'));
+        }
+
+        $message->action('View Order Details', url('/orders/' . $this->order->id))
             ->line('We will notify you when your order status changes.')
             ->line('Thank you for shopping with us!');
+
+        return $message;
     }
 
     /**
